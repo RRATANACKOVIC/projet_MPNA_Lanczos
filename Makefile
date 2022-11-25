@@ -12,9 +12,11 @@ FLIBS = -lm
 
 #programs
 
-lanczos : main.o
-	$(CC) -o $(BIN)lanczos $(BIN)main.o $(FLIBS)
-main.o : $(SRC)main.c
+lanczos : func.o main.o
+	$(CC) -o $(BIN)lanczos $(BIN)func.o $(BIN)main.o $(FLIBS)
+func.o : $(SRC)func.c
+	$(CC) -o $(BIN)func.o -c $(SRC)func.c $(FLIBS)
+main.o : $(INC)func.h $(SRC)main.c
 	$(CC) -o $(BIN)main.o -c $(SRC)main.c $(FLIBS)
 
 
