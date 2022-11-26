@@ -6,3 +6,5 @@
 
 
 void test_func(void);
+void printvec(double * vec, int length, char *name);
+void printmat(double * vec, int nolines, int nocols, char *name, CBLAS_LAYOUT layout);

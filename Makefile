@@ -7,7 +7,7 @@ CC    = gcc
 
 #flags
 
-FLIBS = -lm
+FLIBS = -lm -lblas
 #compilation
 
 #programs
