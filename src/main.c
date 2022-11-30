@@ -56,5 +56,13 @@ int main (void)
   cblas_dscal(nolines, oobeta, z, incz);
   printf("z/||z|| \n");
   printvec(z, nolines, "z");
+  double *a3 = A3(3, layout);
+  printmat(a3, 3, 3, "A3", layout);
+  double *a9 = A9(5.0, 2.0,10, layout);
+  printmat(a9, 10, 10, "A9", layout);
+  double *amn = AMn(5, layout);
+  printmat(amn, 5, 5, "AMn", layout);
+  double *a1 = A1();
+  printmat(a1, 8, 8, "A1", layout);
   return 0;
 }
