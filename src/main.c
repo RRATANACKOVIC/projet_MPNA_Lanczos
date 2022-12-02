@@ -12,46 +12,70 @@ int main (void)
   CBLAS_TRANSPOSE transa = CblasNoTrans;
   printf(" Welcome on the Lanczos project !\n");
   test_func();
-  int nolines = 4, nocols = 3;
-  int lda  = nocols, incx = 1, incy = 1, incz = 1;
-  double alpha = 1.0, beta = 1.0, oobeta = 1.0;
+  int nolines = 4, nocols = 4, m = 4;
+  int lda  = nocols, incv = 1, incw = 1, incz = 1;
+  double oobeta = 1.0;
+  double *alpha = (double *)calloc(m+1,sizeof(double));
+  double *beta = (double *)calloc(m+1,sizeof(double));
   double *a = (double*)calloc(nolines*nocols,sizeof(double));
   //first line
-  *a = -1.0; *(a+1) = 0.0; *(a+2) = 1.0;
+  *a = -1.0; *(a+1) = 1.0; *(a+2) = -1.0;*(a+3) = 1.0;
   //second line
-  *(a+3) = 1.0;  *(a+4) = -1.0; *(a+5) = 0.0;
+  *(a+4) = 1.0; *(a+5) = -1.0;*(a+6) = 1.0;  *(a+7) = -1.0;
   //third line
-  *(a+6) = 0.0;  *(a+7) = 1.0; *(a+8) = -1.0;
+  *(a+8) = -1.0;*(a+9) = 1.0;  *(a+10) = -1.0; *(a+11) = 1.0;
   //fourth line
-  *(a+9) = 2.0;  *(a+10) = 0.0; *(a+11) = 1.0;
+  *(a+12) = 1.0; *(a+13) = -1.0;*(a+14) = 1.0;  *(a+15) = -1.0;
   printmat(a, nolines, nocols, "a", layout);
-  double *x = (double*)calloc(nocols,sizeof(double));
-  *x = 2.0;*(x+1) = -3.0;*(x+2) = 4.0;
-  printvec(x, nocols, "x");
-  double *y = (double*)calloc(nolines,sizeof(double));
-  *y = 1.0; *(y+1) = 2.0; *(y+2) = 3.0; *(y+3) = 4.0;
-  printvec(y, nolines, "y");
-  double *z = (double*)calloc(nolines,sizeof(double));
-  cblas_dcopy(nolines, y, incy, z, incz);
-  printf("y copied in z by cblas_dcopy\n");
-  printvec(z, nolines, "z");
-  cblas_dgemv( layout, transa, nolines, nocols, alpha, a, lda, x, incx, beta, z, incz );
-  printf("z is the output of cblas_dgemv(y = Ax-y)\n");
-  printvec(z, nolines, "z");
-  printf("dotprod between y and z\n");
-  alpha = cblas_ddot(nolines, y, incy, z, incz);
-  printf("y.z = %lf\n", alpha);
-  cblas_daxpy(nolines, -alpha, y, incy, z, incz);
-  printf("z = z-alpha*y\n");
-  printvec(z, nolines, "z");
-  printf("z = z-alpha*y\n");
-  beta = cblas_dnrm2(nolines,z,incz);
-  printf("beta = ||x|| = %lf\n", beta);
-  oobeta =1.0/beta;
-  double * t = (double *)calloc(nolines,sizeof(double));
-  cblas_dscal(nolines, oobeta, z, incz);
-  printf("z/||z|| \n");
-  printvec(z, nolines, "z");
+  double *v = (double*)calloc(nocols*(m+1),sizeof(double));
+  *(v+nolines) = 2.0;*(v+nolines+1) = -3.0;*(v+nolines+2) = 4.0; *(v+nolines+3) = -5.0;
+  printvec(v+nolines, nocols, "v");
+  double *w = (double*)calloc(nolines*(m+1),sizeof(double));
+  *w = 1.0; *(w+1) = 2.0; *(w+2) = 3.0; *(w+3) = 4.0;
+  printvec(w, nolines, "w");
+  if(nolines !=nocols)
+  {
+    printf("matrix isn't square, abort\n");
+    exit(0);
+  }
+  for(int j = 1; j<m;j++)
+  {
+    printf("--------- iteration : %d -----------\n",j);
+
+    cblas_dcopy(nolines, v+(j-1)*nolines, incv, w+j*nolines, incw);
+    printf("v(j-1) copied in w(j) by cblas_dcopy\n");
+    printvec(w+j*nolines, nolines, "w(j)");
+
+    printvec(v+nolines, nocols, "v(j)");
+
+    cblas_dgemv(layout, transa, nolines, nocols, 1.0, a, lda, v+j*nocols, incv, *(beta+j), w+j*nolines, incw);
+    printf("w is the output of cblas_dgemv(w = Av-w)\n");
+    printvec(w+j*nolines, nolines, "w");
+
+    printf("dotprod between w and z\n");
+    *(alpha+j) = cblas_ddot(nolines, w+j*nolines, incw, v+j*nolines, incv);
+    printf("w(j).v(j) = %lf\n", *(alpha+j));
+
+    cblas_daxpy(nolines, -1.0*(*(alpha+j)), v+j*nolines, incv, w+j*nolines, incw);
+    printf("z = z-alpha*w\n");
+    printvec(w+j*nolines, nolines, "w");
+
+    printf("w = w-alpha*v\n");
+
+    *(beta+j+1) = cblas_dnrm2(nolines,w+j*nolines,incw);
+    printf("beta = ||v|| = %lf\n", *(beta+j+1));
+
+    oobeta =1.0/(*(beta+j+1));
+    cblas_dcopy(nolines, w+j*nolines, incw, v+(j+1)*nolines, incv);
+    printf("v(j-1) copied in w(j) by cblas_dcopy\n");
+    printvec(w+j*nolines, nolines, "w");
+
+    cblas_dscal(nolines, oobeta, v+(j+1)*nolines, incv);
+    printf("z/||z|| \n");
+    printvec(v+(j+1)*nolines, nolines, "v(j+1)");
+  }
+
+  /*
   double *a3 = A3(3, layout);
   printmat(a3, 3, 3, "A3", layout);
   double *a9 = A9(5.0, 2.0,10, layout);
@@ -60,5 +84,7 @@ int main (void)
   printmat(amn, 5, 5, "AMn", layout);
   double *a1 = A1();
   printmat(a1, 8, 8, "A1", layout);
+  */
+
   return 0;
 }
