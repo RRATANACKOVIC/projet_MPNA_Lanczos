@@ -12,11 +12,13 @@ FLIBS = -lm -lblas
 
 #programs
 
-lanczos : func.o main.o
-	$(CC) -o $(BIN)lanczos $(BIN)func.o $(BIN)main.o $(FLIBS)
+lanczos : computations.o func.o main.o
+	$(CC) -o $(BIN)lanczos $(BIN)computations.o $(BIN)func.o $(BIN)main.o $(FLIBS)
 func.o : $(SRC)func.c
 	$(CC) -o $(BIN)func.o -c $(SRC)func.c $(FLIBS)
-main.o : $(INC)func.h $(SRC)main.c
+computations.o : $(INC)func.h $(SRC)computations.c
+	$(CC) -o $(BIN)computations.o -c $(SRC)computations.c $(FLIBS)
+main.o : $(INC)func.h $(INC)computations.h $(SRC)main.c
 	$(CC) -o $(BIN)main.o -c $(SRC)main.c $(FLIBS)
 
 

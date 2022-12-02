@@ -4,7 +4,8 @@
 #include <cblas.h>
 #include <lapacke.h>
 
-#include"../inc/func.h"
+#include "../inc/func.h"
+#include "../inc/computations.h"
 
 int main (void)
 {
@@ -35,54 +36,11 @@ int main (void)
   printvec(w, nolines, "w");
   if(nolines !=nocols)
   {
-    printf("matrix isn't square, abort\n");
+    printf("Matrix isn't square, abort.\n");
     exit(0);
   }
-  for(int j = 1; j<m;j++)
-  {
-    printf("--------- iteration : %d -----------\n",j);
 
-    cblas_dcopy(nolines, v+(j-1)*nolines, incv, w+j*nolines, incw);
-    printf("v(%d) copied in w(%d) by cblas_dcopy\n",j-1,j);
-    printvec(w+j*nolines, nolines, "w(j)");
-
-    printvec(v+nolines, nocols, "v(j)");
-
-    cblas_dgemv(layout, transa, nolines, nocols, 1.0, a, lda, v+j*nocols, incv, *(beta+j), w+j*nolines, incw);
-    printf("w is the output of cblas_dgemv(w(%d) = Av(%d)-beta(%d)*v(%d)\n",j,j,j,j-1);
-    printvec(w+j*nolines, nolines, "w");
-
-    printf("dotprod between w(%d) and v(%d)\n",j,j);
-    *(alpha+j) = cblas_ddot(nolines, w+j*nolines, incw, v+j*nolines, incv);
-    printf("w(%d).v(%d) = %lf\n\n",j,j, *(alpha+j));
-
-    cblas_daxpy(nolines, -1.0*(*(alpha+j)), v+j*nolines, incv, w+j*nolines, incw);
-    printf("w(%d) = w(%d)-alpha(%d)*v(%d)\n",j,j,j,j);
-    printvec(w+j*nolines, nolines, "w");
-
-    *(beta+j+1) = cblas_dnrm2(nolines,w+j*nolines,incw);
-    printf("beta(%d) = ||v(%d)|| = %lf\n", j+1,j,*(beta+j+1));
-
-    oobeta =1.0/(*(beta+j+1));
-    cblas_dcopy(nolines, w+j*nolines, incw, v+(j+1)*nolines, incv);
-    printf("w(%d) copied in v(%d) by cblas_dcopy\n",j,j+1);
-    printvec(w+j*nolines, nolines, "w");
-
-    cblas_dscal(nolines, oobeta, v+(j+1)*nolines, incv);
-    printf("v(%d)/beta(%d) \n",j+1,j);
-    printvec(v+(j+1)*nolines, nolines, "v(j+1)");
-  }
-
-  /*
-  double *a3 = A3(3, layout);
-  printmat(a3, 3, 3, "A3", layout);
-  double *a9 = A9(5.0, 2.0,10, layout);
-  printmat(a9, 10, 10, "A9", layout);
-  double *amn = AMn(5, layout);
-  printmat(amn, 5, 5, "AMn", layout);
-  double *a1 = A1();
-  printmat(a1, 8, 8, "A1", layout);
-  */
-
+  lanczos_algorithm(nolines, nocols, m, a, v, w, alpha, beta);
+  printvec(v,(m+1)*nolines,"test");
   return 0;
 }
