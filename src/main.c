@@ -14,7 +14,7 @@ int main (void)
   test_func();
   int nolines = 4, nocols = 4, m = 4;
   int lda  = nocols, incv = 1, incw = 1, incz = 1;
-  double oobeta = 1.0;
+  double oobeta = 1.0;//oobeta = one over beta, this variable's only purpose is to fit dscal's prototype
   double *alpha = (double *)calloc(m+1,sizeof(double));
   double *beta = (double *)calloc(m+1,sizeof(double));
   double *a = (double*)calloc(nolines*nocols,sizeof(double));
@@ -43,35 +43,33 @@ int main (void)
     printf("--------- iteration : %d -----------\n",j);
 
     cblas_dcopy(nolines, v+(j-1)*nolines, incv, w+j*nolines, incw);
-    printf("v(j-1) copied in w(j) by cblas_dcopy\n");
+    printf("v(%d) copied in w(%d) by cblas_dcopy\n",j-1,j);
     printvec(w+j*nolines, nolines, "w(j)");
 
     printvec(v+nolines, nocols, "v(j)");
 
     cblas_dgemv(layout, transa, nolines, nocols, 1.0, a, lda, v+j*nocols, incv, *(beta+j), w+j*nolines, incw);
-    printf("w is the output of cblas_dgemv(w = Av-w)\n");
+    printf("w is the output of cblas_dgemv(w(%d) = Av(%d)-beta(%d)*v(%d)\n",j,j,j,j-1);
     printvec(w+j*nolines, nolines, "w");
 
-    printf("dotprod between w and z\n");
+    printf("dotprod between w(%d) and v(%d)\n",j,j);
     *(alpha+j) = cblas_ddot(nolines, w+j*nolines, incw, v+j*nolines, incv);
-    printf("w(j).v(j) = %lf\n", *(alpha+j));
+    printf("w(%d).v(%d) = %lf\n\n",j,j, *(alpha+j));
 
     cblas_daxpy(nolines, -1.0*(*(alpha+j)), v+j*nolines, incv, w+j*nolines, incw);
-    printf("z = z-alpha*w\n");
+    printf("w(%d) = w(%d)-alpha(%d)*v(%d)\n",j,j,j,j);
     printvec(w+j*nolines, nolines, "w");
 
-    printf("w = w-alpha*v\n");
-
     *(beta+j+1) = cblas_dnrm2(nolines,w+j*nolines,incw);
-    printf("beta = ||v|| = %lf\n", *(beta+j+1));
+    printf("beta(%d) = ||v(%d)|| = %lf\n", j+1,j,*(beta+j+1));
 
     oobeta =1.0/(*(beta+j+1));
     cblas_dcopy(nolines, w+j*nolines, incw, v+(j+1)*nolines, incv);
-    printf("v(j-1) copied in w(j) by cblas_dcopy\n");
+    printf("w(%d) copied in v(%d) by cblas_dcopy\n",j,j+1);
     printvec(w+j*nolines, nolines, "w");
 
     cblas_dscal(nolines, oobeta, v+(j+1)*nolines, incv);
-    printf("z/||z|| \n");
+    printf("v(%d)/beta(%d) \n",j+1,j);
     printvec(v+(j+1)*nolines, nolines, "v(j+1)");
   }
 
