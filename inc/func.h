@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 #include <cblas.h>
 #include <lapacke.h>
 
@@ -12,3 +13,4 @@ double *A3(int n, CBLAS_LAYOUT layout);
 double *A9(double a, double b, int n, CBLAS_LAYOUT layout);
 double *AMn(int n, CBLAS_LAYOUT layout);
 double *A1(void);
+double *randsym (int n);

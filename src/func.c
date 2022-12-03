@@ -38,7 +38,7 @@ void printmat(double * vec, int nolines, int nocols, char *name, CBLAS_LAYOUT la
 
 /*
 The following functions are named after the arrays shown in the
-test array document.
+test array document stored in res.
 */
 
 double * A3(int n, CBLAS_LAYOUT layout)
@@ -129,5 +129,25 @@ double *A1(void)
 
   *(output+48)=g;*(output+49)=-h;*(output+50)=-e;*(output+51)=f;*(output+52)=-c;*(output+53)=d;*(output+54)=a;*(output+55)=-b;
   *(output+56)=-h;*(output+57)=g;*(output+58)=f;*(output+59)=-e;*(output+60)=d;*(output+61)=-c;*(output+62)=-b;*(output+63)=a;
+  return output;
+}
+
+double *randsym (int n)
+{
+  int inco = 1, incc = 1;
+  double *output = (double *)calloc(n*n, sizeof(double));
+  double *copy = (double *)calloc(n*n, sizeof(double));
+  srand(time(NULL));
+  //int seed = rand()%100;
+  int seed[4] = {rand()%100, rand()%100, rand()%100, 2*(rand()%100)+1};
+  LAPACKE_dlarnv_work(2,seed, n*n, output);// creates random array  the 2 is for uniform values in [-1,1]
+  cblas_dcopy(n*n, output, inco, copy, incc);
+  for (int i = 0; i<n; i++)
+  {
+    for (int j = 0; j<n; j++)
+    {
+      *(output+i*n+j) += *(copy+j*n+i);// a + a^T is symmetric
+    }
+  }
   return output;
 }
