@@ -14,3 +14,4 @@ double *A9(double a, double b, int n, CBLAS_LAYOUT layout);
 double *AMn(int n, CBLAS_LAYOUT layout);
 double *A1(void);
 double *randsym (int n);
+double *randunitvec (int n);

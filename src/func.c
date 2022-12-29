@@ -151,3 +151,15 @@ double *randsym (int n)
   }
   return output;
 }
+
+double *randunitvec (int n)
+{
+  int inco = 1;
+  double *output = (double *)calloc(n, sizeof(double));
+  srand(time(NULL));
+  int seed[4] = {rand()%100, rand()%100, rand()%100, 2*(rand()%100)+1};
+  LAPACKE_dlarnv_work(2,seed, n, output);// creates random array  the 2 is for uniform values in [-1,1]
+  cblas_dscal(n, 1.0/cblas_dnrm2(n, output,inco), output, inco);//computes v(j+1) = alpha*v(j+1) = (1/beta(j+1))*v(j+1) [oobeta = aplha]= (1/beta(j+1))*w(j) [w(j) copied into v(j+1)]
+
+  return output;
+}

@@ -55,6 +55,9 @@ int main (void)
   printvec(v,(m+1)*nolines,"test");
   double * sym = randsym(10);
   printmat(sym, 10, 10, "sym", layout);
+  double *ruv = randunitvec(100000000);
+  //printvec(ruv,10,"ruv");
+  printf("norm2 = %lf\n",1.0-cblas_dnrm2(100000000, ruv,1));
 
   return 0;
 }
