@@ -8,8 +8,16 @@
 #include "../inc/func.h"
 #include "../inc/computations.h"
 
-int main (void)
+int main (int argc, char **argv)
 {
+  if (argc != 2)
+  {
+    printf("No output file mentionned, abort\n");
+    exit(0);
+  }
+
+  char *filename = argv[1];
+
   CBLAS_LAYOUT layout = CblasRowMajor;
   /*
   ///////// layout \\\\\\\\\\
@@ -21,43 +29,61 @@ int main (void)
   A in CblasColMajor : A = [a,d,g,b,e,h,c,f,i]
   */
   CBLAS_TRANSPOSE transa = CblasNoTrans;// No transpose is used
-  int nolines = 4, nocols = 4, m = 4;
-  int lda  = nocols, incv = 1, incw = 1, incz = 1;
-  double oobeta = 1.0;//oobeta = one over beta, this variable's only purpose is to fit dscal's prototype
-  double *alpha = (double *)calloc(m+1,sizeof(double));// stores the values of alpha(1), ..., alpha(m+1)
-  double *beta = (double *)calloc(m+1,sizeof(double)); // stores the values of beta(1), ..., beta(m+1)
-  double *a = (double*)calloc(nolines*nocols,sizeof(double));// the input array
-  //first line
-  *a = -1.0; *(a+1) = 1.0; *(a+2) = -1.0;*(a+3) = 1.0;
-  //second line
-  *(a+4) = 1.0; *(a+5) = -1.0;*(a+6) = 1.0;  *(a+7) = -1.0;
-  //third line
-  *(a+8) = -1.0;*(a+9) = 1.0;  *(a+10) = -1.0; *(a+11) = 1.0;
-  //fourth line
-  *(a+12) = 1.0; *(a+13) = -1.0;*(a+14) = 1.0;  *(a+15) = -1.0;
-  printmat(a, nolines, nocols, "a", layout);
-  double *v = (double*)calloc(nocols*(m+1),sizeof(double));// stores all v vectors computed throughout the process
-  /*
-  there is no layout v are following each other, v0 is full of zeros
-  */
-  *(v+nolines) = 2.0;*(v+nolines+1) = -3.0;*(v+nolines+2) = 4.0; *(v+nolines+3) = -5.0;
-  printvec(v+nolines, nocols, "v");
-  double *w = (double*)calloc(nolines*(m+1),sizeof(double));
-  *w = 1.0; *(w+1) = 2.0; *(w+2) = 3.0; *(w+3) = 4.0;
-  printvec(w, nolines, "w");
-  if(nolines !=nocols)
-  {
-    printf("Matrix isn't square, abort.\n");
-    exit(0);
-  }
 
-  lanczos_algorithm(nolines, nocols, m, a, v, w, alpha, beta);
-  printvec(v,(m+1)*nolines,"test");
-  double * sym = randsym(10);
-  printmat(sym, 10, 10, "sym", layout);
-  double *ruv = randunitvec(100000000);
-  //printvec(ruv,10,"ruv");
-  printf("norm2 = %lf\n",1.0-cblas_dnrm2(100000000, ruv,1));
+
+  int n0 = 2,nmax = 4, nstep = 2, m0 = 1, mstep = 1, nrep = 10;
+  nmax++;
+  double mval = 0.0, stdval = 0.0;
+  struct timespec start, end;
+  double *duration = (double *)calloc(nrep,sizeof(double));
+
+  FILE *fptr;
+  fptr = fopen(filename,"w");
+  fprintf(fptr,"n ; m ; mean duration (ns) ; std (ns) \n");
+  fclose(fptr);
+
+  for(int n = n0; n< nmax; n+=nstep)
+  {
+    //printf("* n = %d\n",n);
+    for(int m = m0; m<n+1; m+=mstep)
+    {
+      //printf(" - m = %d\n",m);
+      for(int rep = 0; rep<nrep; rep++)
+      {
+        //printf("  _ rep = %d\n",rep);
+        double *alpha = (double *)calloc(m+1,sizeof(double));// stores the values of alpha(1), ..., alpha(m+1)
+        double *beta = (double *)calloc(m+1,sizeof(double)); // stores the values of beta(1), ..., beta(m+1)
+        double *a = randsym(n);// the input array
+        double *v = (double*)calloc(n*(m+1),sizeof(double));// stores all v vectors computed throughout the process
+        double *v1 = randunitvec(n);
+        cblas_dcopy(n, v1, 1, v+n, 1);
+        free(v1);
+        //printmat(v,m+1,n,"v",CblasRowMajor);
+        double *w = (double*)calloc(n*(m+1),sizeof(double));
+
+        clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+        lanczos_algorithm(n, n, m, a, v, w, alpha, beta);
+        clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+
+        *(duration+rep) = (double)(1000000000*(end.tv_sec-start.tv_sec)+(end.tv_nsec-start.tv_nsec));
+
+        //printf("rep n°%d, duration = %lf\n",rep+1,*(duration+rep));
+
+        free(alpha);
+        free(beta);
+        free(a);
+        free(v);
+        free(w);
+      }
+      mval = mean(duration, nrep);
+      stdval = std(duration,nrep,mval);
+      //printf("mean duration (ns) = %lf (+/-) %lf\n", mval, stdval);
+      fptr = fopen(filename,"a");
+      fprintf(fptr,"%d ; %d ; %lf ; %lf\n",n,m,mval,stdval);
+      fclose(fptr);
+
+    }
+  }
 
   return 0;
 }

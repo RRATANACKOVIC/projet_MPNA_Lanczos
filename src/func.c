@@ -163,3 +163,20 @@ double *randunitvec (int n)
 
   return output;
 }
+
+double mean (double *sample, int noelts)
+{
+  double output = 0.0;
+  for(int i = 0; i<noelts; i++)
+  {
+    output += *(sample+i);
+  }
+  output /= (double)(noelts);
+
+  return output;
+}
+
+double std (double *sample, int noelts, double mval)
+{
+  return sqrt(cblas_ddot(noelts, sample, 1, sample, 1)/((double)(noelts))-mval*mval);
+}

@@ -15,3 +15,5 @@ double *AMn(int n, CBLAS_LAYOUT layout);
 double *A1(void);
 double *randsym (int n);
 double *randunitvec (int n);
+double mean (double *sample, int noelts);
+double std (double *sample, int noelts, double mval);
