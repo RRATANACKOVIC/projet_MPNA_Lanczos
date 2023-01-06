@@ -42,13 +42,13 @@ int main (int argc, char **argv)
   fprintf(fptr,"n ; m ; mean duration (ns) ; std (ns) \n");
   fclose(fptr);
 
-  for(int n = n0; n< nmax; n+=nstep)
+  for(int n = n0; n< nmax; n+=nstep)// nmax/nstep repetions for different
   {
     //printf("* n = %d\n",n);
     for(int m = m0; m<n+1; m+=mstep)
     {
       //printf(" - m = %d\n",m);
-      for(int rep = 0; rep<nrep; rep++)
+      for(int rep = 0; rep<nrep; rep++)// the m-th degree of Lanczos algorithm for size n problem is repeated nrep times to get statistics (mean and std)
       {
         //printf("  _ rep = %d\n",rep);
         double *alpha = (double *)calloc(m+1,sizeof(double));// stores the values of alpha(1), ..., alpha(m+1)
@@ -65,7 +65,7 @@ int main (int argc, char **argv)
         lanczos_algorithm(n, n, m, a, v, w, alpha, beta);
         clock_gettime(CLOCK_MONOTONIC_RAW, &end);
 
-        *(duration+rep) = (double)(1000000000*(end.tv_sec-start.tv_sec)+(end.tv_nsec-start.tv_nsec));
+        *(duration+rep) = (double)(1000000000*(end.tv_sec-start.tv_sec)+(end.tv_nsec-start.tv_nsec));// since the duration is in ns the billions multiplies the seconds to get ns
 
         //printf("rep n°%d, duration = %lf\n",rep+1,*(duration+rep));
 

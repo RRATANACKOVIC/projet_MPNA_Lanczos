@@ -152,14 +152,14 @@ double *randsym (int n)
   return output;
 }
 
-double *randunitvec (int n)
+double *randunitvec (int n)// creates a vector of random values which euclidean's norm is equal to 1
 {
   int inco = 1;
   double *output = (double *)calloc(n, sizeof(double));
   srand(time(NULL));
-  int seed[4] = {rand()%100, rand()%100, rand()%100, 2*(rand()%100)+1};
+  int seed[4] = {rand()%100, rand()%100, rand()%100, 2*(rand()%100)+1};//the seed is used to generate the random vector
   LAPACKE_dlarnv_work(2,seed, n, output);// creates random array  the 2 is for uniform values in [-1,1]
-  cblas_dscal(n, 1.0/cblas_dnrm2(n, output,inco), output, inco);//computes v(j+1) = alpha*v(j+1) = (1/beta(j+1))*v(j+1) [oobeta = aplha]= (1/beta(j+1))*w(j) [w(j) copied into v(j+1)]
+  cblas_dscal(n, 1.0/cblas_dnrm2(n, output,inco), output, inco);//multiplies by 1/||output|| to have a norm equal to one
 
   return output;
 }
@@ -176,7 +176,7 @@ double mean (double *sample, int noelts)
   return output;
 }
 
-double std (double *sample, int noelts, double mval)
+double std (double *sample, int noelts, double mval)// computes standard deviation
 {
-  return sqrt(cblas_ddot(noelts, sample, 1, sample, 1)/((double)(noelts))-mval*mval);
+  return sqrt(cblas_ddot(noelts, sample, 1, sample, 1)/((double)(noelts))-mval*mval);//std = sum((xi-mean(x))²)= sum(xi²)-mean(x)²
 }
