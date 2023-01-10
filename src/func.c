@@ -46,18 +46,18 @@ double * A3(int n, CBLAS_LAYOUT layout)
   double * output = (double *)calloc(n*n, sizeof(double));
   if (layout == CblasRowMajor)
   {
-    for(int j = 0; j<n; j++)
+    for(int j = 0; j<n; j++)// 0 to n-1 instead of 1 to n
     {
-      for(int i = 0; i<j; i++)
+      for(int i = 0; i<j+1; i++)// if i<j, the jth line is 0 so i<j+1 to avoid that
       {
-        *(output + i*n + j) = n + 1 - j;
+        *(output + i*n + j) = n - j; // 0<j<n-1 and in the document 1<j<n
       }
     }
     for(int j = 0; j<n-1; j++)
     {
       for(int i = j+1; i<n; i++)
       {
-        *(output + i*n + j) = n + 1 - j;
+        *(output + i*n + j) = n - i;
       }
     }
   }

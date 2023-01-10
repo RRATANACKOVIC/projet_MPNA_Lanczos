@@ -30,7 +30,7 @@ int main (int argc, char **argv)
   */
   CBLAS_TRANSPOSE transa = CblasNoTrans;// No transpose is used
 
-
+ /*
   int n0 = 2,nmax = 4, nstep = 2, m0 = 1, mstep = 1, nrep = 10;
   nmax++;
   double mval = 0.0, stdval = 0.0;
@@ -84,6 +84,8 @@ int main (int argc, char **argv)
 
     }
   }
-
+  */
+  double *aaa = A3(5, layout);
+  printmat(aaa, 5, 5, "test",layout);
   return 0;
 }
