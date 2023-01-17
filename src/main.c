@@ -8,8 +8,17 @@
 #include "../inc/func.h"
 #include "../inc/computations.h"
 
+#include <mpi.h>
+
+#define MASTER_RANK 0
+
 int main (int argc, char **argv)
 {
+  // MPI init
+  MPI_init(&argc, &argv);
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
   if (argc != 2)
   {
     printf("No output file mentionned, abort\n");
@@ -84,8 +93,8 @@ int main (int argc, char **argv)
 
     }
   }
-  */
-  double *aaa = A3(5, layout);
-  printmat(aaa, 5, 5, "test",layout);
+
+  // ending MPI
+  MPI_Finalize();
   return 0;
 }
