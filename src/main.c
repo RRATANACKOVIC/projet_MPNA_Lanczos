@@ -39,7 +39,7 @@ int main (int argc, char **argv)
   */
   CBLAS_TRANSPOSE transa = CblasNoTrans;// No transpose is used
 
- /*
+
   int n0 = 2,nmax = 4, nstep = 2, m0 = 1, mstep = 1, nrep = 10;
   nmax++;
   double mval = 0.0, stdval = 0.0;
@@ -68,19 +68,30 @@ int main (int argc, char **argv)
 	int erow = displs[rank]+counts[rank] // end row
 	double *a = AMn(n, layout, srow, erow);
         double *v = (double*)calloc(n*(m+1),sizeof(double));// stores all v vectors computed throughout the process
-        double *v1 = randunitvec(n);
+	// initializing v1 on only one proc
+	if(rank==MASTER_RANK) double *v1 = randunitvec(n);
+	// Sharing v1 with all the procs
+	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Bcast(&v1[0],n,MPI_DOUBLE,MASTER_RANK,MPI_COMM_WORLD);
         cblas_dcopy(n, v1, 1, v+n, 1);
         free(v1);
         //printmat(v,m+1,n,"v",CblasRowMajor);
-        double *w = (double*)calloc(n*(m+1),sizeof(double));
+	// Sequential version
+        //double *w = (double*)calloc(n*(m+1),sizeof(double));
+	
+	double *w = (double*)calloc(local_nolines*(m+1),sizeof(double))
 
-        clock_gettime(CLOCK_MONOTONIC_RAW, &start);
-        lanczos_algorithm(n, n, m, a, v, w, alpha, beta);
-        clock_gettime(CLOCK_MONOTONIC_RAW, &end);
-
-        *(duration+rep) = (double)(1000000000*(end.tv_sec-start.tv_sec)+(end.tv_nsec-start.tv_nsec));// since the duration is in ns the billions multiplies the seconds to get ns
-
-        //printf("rep n°%d, duration = %lf\n",rep+1,*(duration+rep));
+	// waiting for all the proc to measure the lanczos algorithm
+	MPI_Barrier(MPI_COMM_WORLD);
+        if(rank==MASTER_RANK) clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+        //lanczos_algorithm(n, n, m, a, v, w, alpha, beta);
+        parallel_lanczos_algo(n, counts, displs, n, m, a, v, w, alpha, beta);
+        if(rank==MASTER_RANK)
+	{
+	  clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+	  *(duration+rep) = (double)(1000000000*(end.tv_sec-start.tv_sec)+(end.tv_nsec-start.tv_nsec));// since the duration is in ns the billions multiplies the seconds to get ns
+	  //printf("rep n°%d, duration = %lf\n",rep+1,*(duration+rep));
+	}
 
         free(alpha);
         free(beta);
