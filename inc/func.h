@@ -17,3 +17,5 @@ double *randsym (int n);
 double *randunitvec (int n);
 double mean (double *sample, int noelts);
 double std (double *sample, int noelts, double mval);
+
+void distribute_on_procs(int nolines, int *counts, int *displs);

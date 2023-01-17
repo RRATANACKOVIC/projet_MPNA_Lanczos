@@ -37,10 +37,70 @@ void printmat(double * vec, int nolines, int nocols, char *name, CBLAS_LAYOUT la
 }
 
 /*
+The following function distribute a matrix rows on multiple procs 
+*/
+
+void distribute_on_procs(int nolines, int *counts, int *displs)
+{
+  int size;
+  MPI_Comm_size(MPI_COMM_WORLD,&size);
+  
+  displs[0] = 0;
+  for(int rank=0; rank<size; rank++)
+  {
+    if (rank < nolines%size)
+    {
+      srow = (nolines/size)*rank + rank;
+      erow = (nolines/size)*(rank+1) + rank + 1;
+    }
+    else
+    {
+      srow = (nolines/size)*rank + nolines%size;
+      erow = (nolines/size)*(rank+1) + nolines%size;
+    }
+    counts[rank] = srow-erow;
+    if(rank>0) displs[rank] = displs[rank-1]+counts[rank-1];
+  }
+}
+
+/*
 The following functions are named after the arrays shown in the
 test array document stored in res.
 */
 
+// parallel version
+// n: the number of both of rows and columns before distribution. It is also the number of columns avec after distribution
+// layout
+// norows: number of rows after distribution
+double * A3(int n, CBLAS_LAYOUT layout, int srow, int erow)
+{
+  local_nolines = erow-srow
+  double * output = (double *)calloc(n*local_nolines, sizeof(double));
+  if (layout == CblasRowMajor)
+  {
+    for(int i=0; i<local_nolines; j++)
+    {
+      for(int j=0; j<n; j++)
+      {
+	if((i+srow)<=j)
+	{
+	  *(output+ i*n + j) = n + 1 - j;
+	}
+	else
+	{
+	  *(output+ i*n + j) = n + 1 - i - srow;
+	}
+      }
+    }
+  }
+  else
+  {
+    printf("CblasColMajor not implemented, the array is full of zeros \n");
+  }
+  return output;
+}
+
+/*
 double * A3(int n, CBLAS_LAYOUT layout)
 {
   double * output = (double *)calloc(n*n, sizeof(double));
@@ -66,8 +126,44 @@ double * A3(int n, CBLAS_LAYOUT layout)
     printf("CblasColMajor not implemented, the array is full of zeros \n");
   }
   return output;
+}*/
+
+double *A9(double a, double b, int n, CBLAS_LAYOUT layout, int srow, int erow)
+{
+  local_nolines = erow-srow
+  double * output = (double *)calloc(n*local_nolines, sizeof(double));
+
+  if (layout == CblasRowMajor)
+  {
+    int sline = 0;
+    int eline = local_nolines;
+    if (srow == 0)
+    {
+      *output = a;
+      *(output+1) = b;
+      sline = 1;
+    }
+    if (erow == n)
+    {
+      eline = local_nolines-1
+      *(output+(n+1)*eline-1) = b;
+      *(output+(n+1)*eline) = a;
+    }
+    for(int i=sline; i<eline; i++)
+    {
+      *(output+(n+1)*i+srow-1) = b;
+      *(output+(n+1)*i+srow) = a;
+      *(output+(n+1)*i+srow+1) = b;
+    }
+  }
+  else
+  {
+    printf("CblasColMajor not implemented, the array is full of zeros \n");
+  }
+  return output;
 }
 
+/*
 double *A9(double a, double b, int n, CBLAS_LAYOUT layout)
 {
   double * output = (double *)calloc(n*n, sizeof(double));
@@ -89,8 +185,44 @@ double *A9(double a, double b, int n, CBLAS_LAYOUT layout)
     printf("CblasColMajor not implemented, the array is full of zeros \n");
   }
   return output;
+}*/
+
+double *AMn(int n, CBLAS_LAYOUT layout, int srow, int erow)
+{
+  local_nolines = erow-srow
+  double * output = (double *)calloc(n*local_nolines, sizeof(double));
+
+  if (layout == CblasRowMajor)
+  {
+    int sline = 0;
+    int eline = local_nolines;
+    if (srow == 0)
+    {
+      *output = 1.0;
+      *(output+1) = -0.1;
+      sline = 1;
+    }
+    if (erow == n)
+    {
+      eline = local_nolines-1
+      *(output+(n+1)*eline-1) = 0.1;
+      *(output+(n+1)*eline) = (double)n;
+    }
+    for(int i=sline; i<eline; i++)
+    {
+      *(output+(n+1)*i+srow-1) = 0.1;
+      *(output+(n+1)*i+srow) = (double)(i+srow+1);
+      *(output+(n+1)*i+srow+1) = -0.1;
+    }
+  }
+  else
+  {
+    printf("CblasColMajor not implemented, the array is full of zeros \n");
+  }
+  return output;
 }
 
+/*
 double *AMn(int n, CBLAS_LAYOUT layout)
 {
   double * output = (double *)calloc(n*n, sizeof(double));
@@ -112,7 +244,7 @@ double *AMn(int n, CBLAS_LAYOUT layout)
     printf("CblasColMajor not implemented, the array is full of zeros \n");
   }
   return output;
-}
+}*/
 
 double *A1(void)
 {

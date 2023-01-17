@@ -62,7 +62,11 @@ int main (int argc, char **argv)
         //printf("  _ rep = %d\n",rep);
         double *alpha = (double *)calloc(m+1,sizeof(double));// stores the values of alpha(1), ..., alpha(m+1)
         double *beta = (double *)calloc(m+1,sizeof(double)); // stores the values of beta(1), ..., beta(m+1)
-        double *a = randsym(n);// the input array
+        //double *a = randsym(n);// the input array
+	distribute_on_procs(n, counts, displs);
+	int srow = displs[rank]; // start row
+	int erow = displs[rank]+counts[rank] // end row
+	double *a = AMn(n, layout, srow, erow);
         double *v = (double*)calloc(n*(m+1),sizeof(double));// stores all v vectors computed throughout the process
         double *v1 = randunitvec(n);
         cblas_dcopy(n, v1, 1, v+n, 1);
