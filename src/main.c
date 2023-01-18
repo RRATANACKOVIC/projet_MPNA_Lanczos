@@ -47,9 +47,12 @@ int main (int argc, char **argv)
   double *duration = (double *)calloc(nrep,sizeof(double));
 
   FILE *fptr;
-  fptr = fopen(filename,"w");
-  fprintf(fptr,"n ; m ; mean duration (ns) ; std (ns) \n");
-  fclose(fptr);
+  if (rank == MASTER_RANK)
+  {
+    fptr = fopen(filename,"w");
+    fprintf(fptr,"n ; m ; mean duration (ns) ; std (ns) \n");
+    fclose(fptr);
+  }
 
   for(int n = n0; n< nmax; n+=nstep)// nmax/nstep repetions for different
   {
@@ -102,9 +105,12 @@ int main (int argc, char **argv)
       mval = mean(duration, nrep);
       stdval = std(duration,nrep,mval);
       //printf("mean duration (ns) = %lf (+/-) %lf\n", mval, stdval);
-      fptr = fopen(filename,"a");
-      fprintf(fptr,"%d ; %d ; %lf ; %lf\n",n,m,mval,stdval);
-      fclose(fptr);
+      if (rank == MASTER_RANK)
+      {
+        fptr = fopen(filename,"a");
+        fprintf(fptr,"%d ; %d ; %lf ; %lf\n",n,m,mval,stdval);
+        fclose(fptr);
+      }
 
     }
   }
