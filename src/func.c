@@ -58,7 +58,7 @@ void distribute_on_procs(int nolines, int *counts, int *displs)
       srow = (nolines/size)*rank + nolines%size;
       erow = (nolines/size)*(rank+1) + nolines%size;
     }
-    counts[rank] = srow-erow;
+    counts[rank] = erow-srow;
     if(rank>0) displs[rank] = displs[rank-1]+counts[rank-1];
   }
 }
