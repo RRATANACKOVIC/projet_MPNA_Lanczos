@@ -3,7 +3,7 @@ BIN   = $(ROOT)bin/
 SRC   = $(ROOT)src/
 TEST  = $(ROOT)tests/
 INC   = $(ROOT)inc/
-CC    = gcc
+CC    = mpicc
 
 #flags
 
