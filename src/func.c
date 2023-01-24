@@ -1,5 +1,7 @@
 #include"../inc/func.h"
 
+#include <mpi.h>
+
 void test_func(void)
 {
   printf("The func.c file seems to be correctly linked.\n");
@@ -44,6 +46,8 @@ void distribute_on_procs(int nolines, int *counts, int *displs)
 {
   int size;
   MPI_Comm_size(MPI_COMM_WORLD,&size);
+
+  int srow, erow;
   
   displs[0] = 0;
   for(int rank=0; rank<size; rank++)
@@ -74,11 +78,11 @@ test array document stored in res.
 // norows: number of rows after distribution
 double * A3(int n, CBLAS_LAYOUT layout, int srow, int erow)
 {
-  local_nolines = erow-srow
+  int local_nolines = erow-srow;
   double * output = (double *)calloc(n*local_nolines, sizeof(double));
   if (layout == CblasRowMajor)
   {
-    for(int i=0; i<local_nolines; j++)
+    for(int i=0; i<local_nolines; i++)
     {
       for(int j=0; j<n; j++)
       {
@@ -130,7 +134,7 @@ double * A3(int n, CBLAS_LAYOUT layout)
 
 double *A9(double a, double b, int n, CBLAS_LAYOUT layout, int srow, int erow)
 {
-  local_nolines = erow-srow
+  int local_nolines = erow-srow;
   double * output = (double *)calloc(n*local_nolines, sizeof(double));
 
   if (layout == CblasRowMajor)
@@ -145,7 +149,7 @@ double *A9(double a, double b, int n, CBLAS_LAYOUT layout, int srow, int erow)
     }
     if (erow == n)
     {
-      eline = local_nolines-1
+      eline = local_nolines-1;
       *(output+(n+1)*eline-1) = b;
       *(output+(n+1)*eline) = a;
     }
@@ -189,7 +193,7 @@ double *A9(double a, double b, int n, CBLAS_LAYOUT layout)
 
 double *AMn(int n, CBLAS_LAYOUT layout, int srow, int erow)
 {
-  local_nolines = erow-srow
+  int local_nolines = erow-srow;
   double * output = (double *)calloc(n*local_nolines, sizeof(double));
 
   if (layout == CblasRowMajor)
@@ -204,7 +208,7 @@ double *AMn(int n, CBLAS_LAYOUT layout, int srow, int erow)
     }
     if (erow == n)
     {
-      eline = local_nolines-1
+      eline = local_nolines-1;
       *(output+(n+1)*eline-1) = 0.1;
       *(output+(n+1)*eline) = (double)n;
     }

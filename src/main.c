@@ -15,9 +15,10 @@
 int main (int argc, char **argv)
 {
   // MPI init
-  MPI_init(&argc, &argv);
-  int rank;
+  MPI_Init(&argc, &argv);
+  int size, rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   if (argc != 2)
   {
@@ -66,13 +67,15 @@ int main (int argc, char **argv)
         double *alpha = (double *)calloc(m+1,sizeof(double));// stores the values of alpha(1), ..., alpha(m+1)
         double *beta = (double *)calloc(m+1,sizeof(double)); // stores the values of beta(1), ..., beta(m+1)
         //double *a = randsym(n);// the input array
+	int counts[size];
+	int displs[size];
 	distribute_on_procs(n, counts, displs);
 	int srow = displs[rank]; // start row
-	int erow = displs[rank]+counts[rank] // end row
+	int erow = displs[rank]+counts[rank]; // end row
 	double *a = AMn(n, layout, srow, erow);
         double *v = (double*)calloc(n*(m+1),sizeof(double));// stores all v vectors computed throughout the process
 	// initializing v1 on only one proc
-	if(rank==MASTER_RANK) double *v1 = randunitvec(n);
+	double *v1 = randunitvec(n); // To be modified, need to be declared only on MASTER_RANK
 	// Sharing v1 with all the procs
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Bcast(&v1[0],n,MPI_DOUBLE,MASTER_RANK,MPI_COMM_WORLD);
@@ -82,7 +85,7 @@ int main (int argc, char **argv)
 	// Sequential version
         //double *w = (double*)calloc(n*(m+1),sizeof(double));
 	
-	double *w = (double*)calloc(local_nolines*(m+1),sizeof(double))
+	double *w = (double*)calloc(counts[rank]*(m+1),sizeof(double));
 
 	// waiting for all the proc to measure the lanczos algorithm
 	MPI_Barrier(MPI_COMM_WORLD);
