@@ -5,6 +5,8 @@
 #include <cblas.h>
 #include <lapacke.h>
 
+#include <mpi.h>
+
 
 void test_func(void);
 void printvec(double * vec, int length, char *name);

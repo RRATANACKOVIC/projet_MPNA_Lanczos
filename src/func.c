@@ -1,7 +1,5 @@
 #include"../inc/func.h"
 
-#include <mpi.h>
-
 void test_func(void)
 {
   printf("The func.c file seems to be correctly linked.\n");
@@ -86,14 +84,14 @@ double * A3(int n, CBLAS_LAYOUT layout, int srow, int erow)
     {
       for(int j=0; j<n; j++)
       {
-	if((i+srow)<=j)
-	{
-	  *(output+ i*n + j) = n + 1 - j;
-	}
-	else
-	{
-	  *(output+ i*n + j) = n + 1 - i - srow;
-	}
+        if((i+srow)<=j)
+        {
+          *(output+ i*n + j) = n - j;
+        }
+        else
+        {
+          *(output+ i*n + j) = n - i - srow;
+        }
       }
     }
   }
