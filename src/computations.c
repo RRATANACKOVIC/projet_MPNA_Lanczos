@@ -5,7 +5,7 @@ void test_computations(void)
   printf("Hello from computation.c\n");
 }
 
-void parallel_lanczos_algo(int global_nolines, int *counts, int *dislps, int nocols, int m, double *a, double *v, double *w, double *alpha, double *beta)
+void parallel_lanczos_algo(int global_nolines, int *counts, int *displs, int nocols, int m, double *a, double *v, double *w, double *alpha, double *beta)
 {
   int size, rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
@@ -25,27 +25,74 @@ void parallel_lanczos_algo(int global_nolines, int *counts, int *dislps, int noc
   for(int j=1; j<m; j++)
   {
     // step 1: Very similar to the sequential version, we just need to adapt the global_nolines with local_nolines
-    cblas_dcopy(local_nolines, v+(j-1)*nolines+srow, incv, w+j*local_nolines, incw);
-    cblas_dgemv(layout, transa, local_nolines, nocols, 1.0, a, lda, v+j*nocols+srow, incv, -1.0*(*(beta+j)), w+j*local_nolines, incw);
+    cblas_dcopy(local_nolines, v+(j-1)*global_nolines+srow, incv, w+j*local_nolines, incw);
+    //if (rank == 1)
+    //{
+    //  printf("v(%d) copied in w(%d) by cblas_dcopy\n",j-1,j);
+    //  printvec(w+j*local_nolines, local_nolines, "w(j)");
+    //  printvec(v+(j-1)*global_nolines+srow, local_nolines, "v(j)");
+    //}
+    //if (rank == 0)
+    //{
+    //  printmat(a,local_nolines,nocols,"a",CblasRowMajor);
+    //  printvec(v+j*global_nolines+srow,local_nolines,"vj");
+    //  printvec(w+j*local_nolines,local_nolines,"w");
+    //}
+    cblas_dgemv(layout, transa, local_nolines, nocols, 1.0, a, lda, v+j*global_nolines, incv, -1.0*(*(beta+j)), w+j*local_nolines, incw);
+    //if (rank == 1)
+    //{
+    //  printf("w is the output of cblas_dgemv(w(%d) = Av(%d)-beta(%d)*v(%d)\n",j,j,j,j-1);
+    //  printvec(w+j*local_nolines, local_nolines, "w");
+    //}
 
     // step 2: Each proc prforms a part of the dot product, the MPI_ALLreduce is used to sum up all the partial sums and bcast on all the procs
-    local_alpha = cblas_ddot(local_nolines, w+j*local_nolines, incw, v+j*nolines+srow, incv);
+    local_alpha = cblas_ddot(local_nolines, w+j*local_nolines, incw, v+j*global_nolines+srow, incv);
+    //printf("w(%d).v(%d) = %lf\n\n",j,j,local_alpha);
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Allreduce(&local_alpha, alpha+j, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    //if (rank == 1) printf("w(%d).v(%d) = %lf\n\n",j,j,*(alpha+j));
 
     // step 3: daxpy is performed only on part of the vector
-    cblas_daxpy(local_nolines, -1.0*(*(alpha+j)), v+j*nolines+srow, incv, w+j*local_nolines, incw);
+    cblas_daxpy(local_nolines, -1.0*(*(alpha+j)), v+j*global_nolines+srow, incv, w+j*local_nolines, incw);
+    //if (rank == 1)
+    //{
+    //  printf("w(%d) = w(%d)-alpha(%d)*v(%d)\n",j,j,j,j);
+    //  printvec(w+j*local_nolines, local_nolines, "w");
+    //}
 
     // step 4: the norm is not computed directly (dnrm2) is not used. The partial dot product is computed instead on each proc then MPI_Allreduce is used to sum
     local_beta = cblas_ddot(local_nolines, w+j*local_nolines, incw, w+j*local_nolines, incv);
-    MPI_Allreduce(&local_alpha, beta+j+1, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Allreduce(&local_beta, beta+j+1, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     *(beta+j+1) = sqrt(*(beta+j+1));
+    //if (rank == 1) printf("beta(%d) = ||v(%d)|| = %lf\n", j+1,j,*(beta+j+1));
 
     // step 5: Similar to the sequential version, v(j+1) is reconstructed at the end using MPI_Allgather
     oobeta =1.0/(*(beta+j+1));
-    cblas_dcopy(local_nolines, w+j*local_nolines, incw, v+(j+1)*nolines+srow, incv);
-    cblas_dscal(local_nolines, oobeta, v+(j+1)*nolines+srow, incv);
-    MPI_Allgatherv(v+(j+1)*nolines+srow, local_nolines, MPI_DOUBLE, v+(j+1)+nolines, counts, displs, MPI_DOUBLE, MPI_COMM_WOLRD);
+    //cblas_dcopy(local_nolines, w+j*local_nolines, incw, v+(j+1)*global_nolines+srow, incv);
+    //if (rank == 1)
+    //{
+    //  printf("w(%d) copied in v(%d) by cblas_dcopy\n",j,j+1);
+    //  printvec(v+(j+1)*global_nolines+srow, local_nolines, "w");
+    //}
+
+    //cblas_dscal(local_nolines, oobeta, v+(j+1)*global_nolines+srow, incv);
+    cblas_dscal(local_nolines, oobeta, w+j*local_nolines, incv);
+    //if (rank == 0)
+    //{
+    //  printf("v(%d)/beta(%d) \n",j+1,j);
+    //  printvec(w+j*local_nolines, local_nolines, "v(j+1)");
+    //}
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Allgatherv(w+j*local_nolines, local_nolines, MPI_DOUBLE, v+(j+1)*global_nolines, counts, displs, MPI_DOUBLE, MPI_COMM_WORLD);
+    //if (rank == 0)
+    //{
+    //  printf("size %d \n",size);
+    //  printf("counts %d %d \n",counts[0],counts[1]);
+    //  printf("displs %d %d \n",displs[0],displs[1]);
+    //  printf("after allgatherv v(%d)/beta(%d) \n",j+1,j);
+    //  printvec(v+(j+1)*global_nolines, global_nolines, "v(j+1)");
+    //}
   }
 }
 
