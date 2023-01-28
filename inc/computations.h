@@ -4,6 +4,9 @@
 #include <cblas.h>
 #include <lapacke.h>
 
+#include <math.h>
+#include <mpi.h>
+
 #include "../inc/func.h"
 
 void test_computations(void);
