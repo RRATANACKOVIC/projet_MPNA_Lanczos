@@ -7,7 +7,7 @@ CC    = mpicc
 
 #flags
 
-FLIBS = -lm -lblas -llapacke
+FLIBS = -lm -lcblas -llapacke
 #compilation
 
 #programs
